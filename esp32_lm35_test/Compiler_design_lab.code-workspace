@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../Documents/Programs/Compiler_design_lab"
+		},
+		{
+			"name": "esp32_lm35_test",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
