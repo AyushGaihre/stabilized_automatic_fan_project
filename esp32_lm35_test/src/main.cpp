@@ -1,7 +1,3 @@
-// ============================================================
-// ESP32 + L298N + DHT11 Temperature-Controlled Fan
-// + WiFi Access Point with JSON API
-//
 // Wiring (Motor):
 //   ENA  -> D14  (PWM speed)
 //   IN1  -> D27  (direction)
@@ -18,34 +14,32 @@
 //   SSID: FanController
 //   Pass: fan12345
 //   URL : http://192.168.4.1/
-// ============================================================
 
 #include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
 #include <WebServer.h>
 
-// ── DHT11 ────────────────────────────────────────────────────
+//DHT11 
 #define DHTPIN  4
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-// ── Motor Pins ───────────────────────────────────────────────
+// Motor Pins
 #define ENA_PIN 14
 #define IN1_PIN 27
 #define IN2_PIN 26
 
-// ── LEDC PWM ─────────────────────────────────────────────────
+//LEDC PWM
 #define PWM_CHANNEL    0
 #define PWM_FREQ       1000
 #define PWM_RESOLUTION 8     // 0–255
 
-// ── WiFi AP Credentials ──────────────────────────────────────
+//WiFi AP Credentials
 const char* AP_SSID = "FanController";
 const char* AP_PASS = "fan12345";
 
-// ── Temperature → Speed Mapping ──────────────────────────────
-    
+//Temperature → Speed Mapping
 struct TempBand {
   float       minTemp;
   int         pwm;
@@ -61,11 +55,11 @@ const TempBand BANDS[] = {
 };
 const int NUM_BANDS = sizeof(BANDS) / sizeof(BANDS[0]);
 
-// ── Timing ───────────────────────────────────────────────────
+//Timing
 const unsigned long DHT_INTERVAL_MS   = 2000UL;
 const unsigned long PRINT_INTERVAL_MS = 5000UL;
 
-// ── Global State ─────────────────────────────────────────────
+// Global State
 float       g_temperature = 0.0f;
 float       g_humidity    = 0.0f;
 int         g_pwm         = 0;
@@ -77,7 +71,7 @@ unsigned long lastPrint   = 0;
 
 WebServer server(80);
 
-// ── Motor Helpers ─────────────────────────────────────────────
+//Motor Helpers
 void setMotor(int pwmValue) {
   if (pwmValue <= 0) {
     digitalWrite(IN1_PIN, LOW);
@@ -90,7 +84,7 @@ void setMotor(int pwmValue) {
   }
 }
 
-// ── Temperature → PWM Band ───────────────────────────────────
+//Temperature → PWM Band 
 void applyTemperatureControl(float temp) {
   for (int i = 0; i < NUM_BANDS; i++) {
     if (temp >= BANDS[i].minTemp) {
@@ -102,7 +96,7 @@ void applyTemperatureControl(float temp) {
   setMotor(g_pwm);
 }
 
-// ── JSON API Endpoint ─────────────────────────────────────────
+// JSON API Endpoint 
 void handleJSON() {
   String json = "{";
   json += "\"temperature\":"  + String(g_temperature, 1) + ",";
@@ -115,7 +109,7 @@ void handleJSON() {
   server.send(200, "application/json", json);
 }
 
-// ─────────────────────────────────────────────────────────────
+
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -157,13 +151,12 @@ void setup() {
   lastPrint   = millis();
 }
 
-// ─────────────────────────────────────────────────────────────
+
 void loop() {
   server.handleClient();
 
   unsigned long now = millis();
 
-  // ── Read DHT11 every 2 seconds ──
   if (now - lastDHTRead >= DHT_INTERVAL_MS) {
     lastDHTRead = now;
 
@@ -181,7 +174,6 @@ void loop() {
     }
   }
 
-  // ── Serial Monitor every 5 seconds ──
   if (now - lastPrint >= PRINT_INTERVAL_MS) {
     lastPrint = now;
     Serial.println("-------------------------------------------");
