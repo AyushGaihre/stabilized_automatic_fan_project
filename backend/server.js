@@ -37,6 +37,54 @@ app.get("/api/fan", async (req, res) => {
   }
 });
 
+// ── History: raw readings, most recent N points (no averaging) ─────
+// Lets you see data land minute-by-minute instead of waiting for a full
+// hour to fill an "hourly average" bucket in /api/history/today.
+app.get("/api/history/recent", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 60, 500);
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        strftime('%H:%M', timestamp / 1000, 'unixepoch', 'localtime') AS label,
+        temperature,
+        humidity,
+        pwm,
+        fan_speed_pct
+      FROM readings
+      ORDER BY timestamp DESC
+      LIMIT ?
+      `
+    )
+    .all(limit);
+  res.json(rows.reverse()); // chronological order for the chart
+});
+
+// ── History: today's readings, one averaged point per hour ─────────
+app.get("/api/history/today", (_req, res) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const since = startOfToday.getTime();
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        strftime('%H:00', timestamp / 1000, 'unixepoch', 'localtime') AS label,
+        ROUND(AVG(temperature), 1) AS temperature,
+        ROUND(AVG(humidity), 1)    AS humidity,
+        ROUND(AVG(pwm))            AS pwm,
+        ROUND(AVG(fan_speed_pct))  AS fan_speed_pct
+      FROM readings
+      WHERE timestamp >= ?
+      GROUP BY label
+      ORDER BY label ASC
+      `
+    )
+    .all(since);
+  res.json(rows);
+});
+
 // ── History: one averaged point per day, last 7 days ───────────────
 app.get("/api/history/daily", (_req, res) => {
   const since = Date.now() - 7 * 24 * 60 * 60 * 1000;

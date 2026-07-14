@@ -4,11 +4,13 @@
   "description": "Local backend that polls the ESP32 fan controller and stores history in SQLite",
   "type": "module",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }

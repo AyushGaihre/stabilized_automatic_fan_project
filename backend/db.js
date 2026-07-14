@@ -1,8 +1,9 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 
 // Single-file database, lives next to this script.
-const db = new Database("fan_data.db");
-db.pragma("journal_mode = WAL");
+// Uses Node's built-in SQLite (no native compilation, no extra dependency —
+// requires Node.js 22.5+; unflagged/no CLI flag needed on Node 23.4+/24+).
+const db = new DatabaseSync("fan_data.db");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS readings (
